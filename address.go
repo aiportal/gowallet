@@ -6,23 +6,20 @@ import (
 	"crypto/sha256"
 	"errors"
 	"flag"
+	"fmt"
+	"io/ioutil"
+	"crypto/rand"
+	"os"
+	"regexp"
+	"syscall"
+	"./secp256k1/bitecdsa"
+	"./secp256k1/bitelliptic"
+	"github.com/btcsuite/btcutil/base58"
+	"github.com/fatih/color"
 	"golang.org/x/crypto/pbkdf2"
 	"golang.org/x/crypto/ripemd160"
 	"golang.org/x/crypto/scrypt"
 	"golang.org/x/crypto/ssh/terminal"
-	"math"
-	"math/rand"
-	"regexp"
-	"syscall"
-	"time"
-
-	"./secp256k1/bitecdsa"
-	"./secp256k1/bitelliptic"
-	"fmt"
-	"github.com/btcsuite/btcutil/base58"
-	"github.com/fatih/color"
-	"io/ioutil"
-	"os"
 )
 
 // WarpWallet encryption:
@@ -83,8 +80,13 @@ func main() {
 			}
 		} else {
 			// Random private key.
-			private_key_bytes := generateRandomBytes(32)
-			copy(private_key[:], private_key_bytes)
+			private_key_bytes, err := generateRandomBytes(32)
+			if err == nil {
+				copy(private_key[:], private_key_bytes)
+			} else {
+				println(err)
+				return
+			}
 		}
 	} else {
 		// Private key from WIF string.
@@ -132,14 +134,14 @@ func computePublicKey(privateKey [32]byte) []byte {
 	return public_key_ripe[:]
 }
 
-// Generate random private key seed.
-func generateRandomBytes(n int) []byte {
-	rand.Seed(time.Now().UTC().UnixNano())
-	buf := make([]byte, n)
-	for i := 0; i < 32; i++ {
-		buf[i] = byte(rand.Intn(math.MaxUint8))
+//Generate secure random private key seed.
+func generateRandomBytes(n int) ([]byte, error) {
+	key := make([]byte, n)
+	_, err := rand.Read(key[:])
+	if err != nil {
+		return nil, err
 	}
-	return buf
+	return key, nil
 }
 
 // Input secret and salt for brain wallet
