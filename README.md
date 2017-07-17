@@ -24,6 +24,9 @@ Usage of address:<br/>
 　　　　Output file name.<br/>
 
 
+Donations are welcome at <code>1Brn37oiWcDoTVqeP1EzbVtCz3dJ7W1Z57</code>
+
+
 # go钱包
 go钱包是用GO语言编写的比特币钱包软件。支持随机钱包和脑钱包。</br>
 
@@ -34,3 +37,4 @@ go钱包是用GO语言编写的比特币钱包软件。支持随机钱包和脑�
 
 建议使用较为复杂的秘密短语并将秘密短语记在纸上。</br>
 同时建议将盐短语记在脑中。
+
