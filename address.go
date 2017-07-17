@@ -42,19 +42,20 @@ Secret phrase at least 16 characters, containing uppercase letters, lowercase le
 Salt phrase at least 6 characters.
 
 It is advisable to use more complex secret phrases and to write secret phrases on paper.
-It is also recommended that salt phrases be memorized in the brain.
+It is also recommended that salt phrases be memorized in the brain.`
 
-`
+const debug = true
+
 
 //Parse command line parameters
 func parseCommandParams() (private string, brain bool, output string) {
 	flag.StringVar(&private, "private", "", "Private key wif string for test.")
 
 	flag.BoolVar(&brain, "brain", false, "Brain wallet mode.")
-	flag.BoolVar(&brain, "b", false, "Brain wallet mode(shorthand).")
+	flag.BoolVar(&brain, "b", false, "...")
 
 	flag.StringVar(&output, "output", "", "Output file name. (optional)")
-	flag.StringVar(&output, "o", "", "Output file name(shorthand). (optional)")
+	flag.StringVar(&output, "o", "", "...")
 
 	flag.Parse()
 	return
@@ -67,7 +68,7 @@ func main() {
 	if private == "" {
 		if brain == true {
 			// Brain wallet
-			secret, salt, err := inputBrainWalletSecret()
+			secret, salt, err := inputBrainWalletSecret(brainWalletTip)
 			if err != nil {
 				println(err.Error())
 				return
@@ -145,73 +146,95 @@ func generateRandomBytes(n int) ([]byte, error) {
 }
 
 // Input secret and salt for brain wallet
-func inputBrainWalletSecret() (secret []byte, salt []byte, err error) {
+func inputBrainWalletSecret(tip string) (secret []byte, salt []byte, err error) {
+
+	errInput := errors.New("Input error")
 
 	// Tip
-	color.Yellow(brainWalletTip)
+	color.Yellow(tip)
+	println("")
 
-	stdin := int(syscall.Stdin) //int(os.Stdin.Fd())
-	errInput := errors.New("Input error")
+	t := terminal.NewTerminal(os.Stdin, "")
 
 	// Secret
 	print("Brain wallet secret:")
-	secret, err = terminal.ReadPassword(stdin)
+	secret1, err := t.ReadPassword("")
 	if err != nil {
 		return
 	}
+	if debug { print(secret1) }
 	println("")
-	if len(secret) < 16 {
-		color.HiRed("Secret at least 16 characters")
+	if len(escapeHexString(secret1)) < 16 {
+		color.HiRed("  Secret at least 16 characters")
 		err = errInput
 		return
 	}
-	if !checkSecretStrength(string(secret[:])) {
-		color.HiRed("Secret should containing uppercase letters, lowercase letters, numbers, and special characters.")
+	if !checkSecretStrength(secret1) {
+		color.HiRed("  Secret should containing uppercase letters, lowercase letters, numbers, and special characters.")
 		err = errInput
 		return
 	}
 
 	// Secret again
 	print("Enter secret again:")
-	secret_again, err := terminal.ReadPassword(stdin)
+	secret2, err := t.ReadPassword("")
 	if err != nil {
 		return
 	}
 	println("")
-	if !bytes.Equal(secret, secret_again) {
-		color.HiRed("Two input secret is different.")
+	if secret1 != secret2 {
+		color.HiRed("  Two input secret is different.")
 		err = errInput
 		return
 	}
 
 	// Salt
 	print("Enter a salt phrase:")
-	salt, err = terminal.ReadPassword(stdin)
+	salt1, err := t.ReadPassword("")
 	if err != nil {
 		return
 	}
+	if debug { print(salt1) }
 	println("")
-	if len(salt) < 6 {
-		salt = []byte{}
-		color.HiRed("Salt at least 6 characters.")
+	if len(salt1) < 6 {
+		color.HiRed("  Salt at least 6 characters.")
 		err = errInput
 		return
 	}
 
 	// Salt again
 	print("Enter salt again:")
-	salt_again, err := terminal.ReadPassword(stdin)
+	salt2, err := t.ReadPassword("")
 	if err != nil {
 		return
 	}
 	println("")
-	if !bytes.Equal(salt, salt_again) {
-		color.HiRed("Two input salt is different.")
+	if salt1 != salt2 {
+		color.HiRed("  Two input salt is different.")
 		err = errInput
 		return
 	}
 
+	secret = escapeHexString(secret1)
+	salt = escapeHexString(salt1)
 	return
+}
+
+// Converts a string like "\xF0" or "\x0f" into a byte
+func escapeHexString(str string) []byte {
+
+	r, _ := regexp.Compile("\\\\x[0-9A-Fa-f]{2}")
+	exists := r.MatchString(str)
+	if !exists {
+		return []byte(str)
+	}
+
+	key := r.ReplaceAllFunc([]byte(str), func(s []byte) []byte{
+		v, _ := hex.DecodeString(string(s[2:]))
+		return v
+	})
+
+	return key
 }
 
 //Check secret strength
