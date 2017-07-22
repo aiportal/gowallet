@@ -19,11 +19,11 @@ It is advisable to use more complex secret and to write secret on paper.
 It is also recommended that password be memorized in the brain.`
 
 const debug = false
-const trace = true
+const trace = false
 
 
 func main() {
-	number, _ := parseParams()
+	vanity, number, export := parseParams()
 
 	if _, err := os.Stat("./gowallet.wlt"); os.IsNotExist(err) {
 		// New wallets.
@@ -44,31 +44,60 @@ func main() {
 				return
 			}
 		} else {
-			seed, err = address.GenerateBrainWalletSeed("www.aiportal.net", "gowallet")
+			seed, err = address.GenerateBrainWalletSeed("https://github.com/aiportal", "gowallet")
 			if err != nil {
 				println(err.Error())
 				return
 			}
 		}
 
-		accountKey, accountPub, err := address.GenerateHDAccount(seed[:], 0)
+		accountKey, accountPub, err := address.GenerateAccount(seed[:], 0)
 		if err != nil {
 			println(err.Error())
 			return
 		}
+		fmt.Printf("account extended key: %s\n", accountKey)
+		fmt.Printf("account extended pub: %s\n", accountPub)
 
-		fmt.Printf("account key: %s\n", accountKey)
-		fmt.Printf("account pub: %s\n", accountPub)
-
-		wallets, err := address.GenerateWallets(accountKey, uint32(number))
-		if err != nil {
-			println(err.Error())
-			return
-		}
-		for i, w := range wallets {
-			fmt.Printf("wallet(%d): \n", i)
-			fmt.Printf("	private: %s\n", w[0])
-			fmt.Printf("	address: %s\n", w[1])
+		if vanity == "" {
+			wallets, err := address.GenerateWallets(accountKey, uint32(number))
+			if err != nil {
+				println(err.Error())
+				return
+			}
+			for i, w := range wallets {
+				fmt.Printf("wallet(%d): \n", i)
+				fmt.Printf("	private: %s\n", w[0])
+				fmt.Printf("	address: %s\n", w[1])
+			}
+			if export != "" {
+				err := exportWallets(export, wallets)
+				if err != nil {
+					println(err.Error())
+					return
+				}
+			}
+		} else {
+			wallets, err := address.SearchVanities(accountKey, vanity, uint32(number),
+				func(i uint32, count uint32, n uint32) {
+					fmt.Printf("processed：%d / %d, found: %d \n", i, count, n)
+			})
+			if err != nil {
+				println(err.Error())
+				return
+			}
+			for i, w := range wallets {
+				fmt.Printf("wallet(%d): \n", i)
+				fmt.Printf("	private: %s\n", w[0])
+				fmt.Printf("	address: %s\n", w[1])
+			}
+			if export != "" {
+				err := exportWallets(export, wallets)
+				if err != nil {
+					println(err.Error())
+					return
+				}
+			}
 		}
 	} else {
 		// Open wallets file.
@@ -76,10 +105,10 @@ func main() {
 }
 
 //Parse command line parameters
-func parseParams() (number uint, export string) {
+func parseParams() (vanity string, number uint, export string) {
 
-	//flag.StringVar(&vanity, "vanity", "", "Find vanity wallet address matching. (prefix or regular)")
-	//flag.StringVar(&vanity, "v", "", "Find vanity wallet address matching. (prefix or regular)")
+	flag.StringVar(&vanity, "vanity", "", "Find vanity wallet address matching. (prefix or regular)")
+	flag.StringVar(&vanity, "v", "", "Find vanity wallet address matching. (prefix or regular)")
 
 	flag.UintVar(&number, "number", 1, "Number of wallets to generate. (default 1)")
 	flag.UintVar(&number, "n", 1, "Number of wallets to generate. (default 1)")
@@ -88,5 +117,20 @@ func parseParams() (number uint, export string) {
 	flag.StringVar(&export, "e", "", "Export wallets in WIF format.")
 
 	flag.Parse()
+	return
+}
+
+// Export wallets
+func exportWallets(filename string, wallets [][]string) (err error) {
+	f, err := os.Create(filename)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+	for i, w := range wallets {
+		f.WriteString(fmt.Sprintf("wallet(%d): \n", i))
+		f.WriteString(fmt.Sprintf("   private: %s", w[0]))
+		f.WriteString(fmt.Sprintf("   address: %s", w[1]))
+	}
 	return
 }

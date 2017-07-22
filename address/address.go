@@ -8,10 +8,10 @@ import (
 	"errors"
 	"os"
 	"regexp"
+	"strings"
 	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/btcsuite/btcd/btcec"
-	"github.com/btcsuite/btcutil/base58"
 	"github.com/btcsuite/btcutil"
+	"github.com/btcsuite/btcutil/base58"
 	"github.com/btcsuite/btcutil/hdkeychain"
 	"github.com/fatih/color"
 	"github.com/aiportal/koblitz/bitelliptic"
@@ -24,7 +24,7 @@ import (
 const hardened = 0x80000000
 
 // Generate BIP44 account extended private key and extended public key.
-func GenerateHDAccount(seed []byte, k uint32) (privateKey string, publicKey string, err error) {
+func GenerateAccount(seed []byte, k uint32) (privateKey string, publicKey string, err error) {
 	master_key, err := hdkeychain.NewMaster(seed, &chaincfg.MainNetParams)
 	if err != nil {
 		return
@@ -92,33 +92,55 @@ func GenerateWallets(account string, count uint32) (wallets [][]string, err erro
 }
 
 // Find vanity address
-func FindVanityAddress(account string, pattern string) (privateWif string, addressWif string, err error) {
+func SearchVanities(account string, vanity string, count uint32,
+	progress func(i uint32, count uint32, n uint32)) (wallets [][]string, err error) {
+
+	pattern := "1" + vanity
+
 	account_key, err := hdkeychain.NewKeyFromString(account)
 	if err != nil {
 		return
 	}
-
-	r, err := regexp.Compile(pattern)
+	change, err := account_key.Child(0)
 	if err != nil {
 		return
 	}
 
+	wallets = [][]string{}
 	for i := uint32(0); i < hardened; i++ {
-		child, err1 := account_key.Child(hardened + i)
+		if i > 0 && i % 10000 == 0 {
+			progress(i, hardened, uint32(len(wallets)))
+		}
+
+		child, err1 := change.Child(i)
+		if err1 != nil {
+			err = err1
+			break
+		}
+		address, err1 := child.Address(&chaincfg.MainNetParams)
 		if err1 != nil {
 			err = err1
 			return
 		}
-		address_key, err1 := child.Address(&chaincfg.MainNetParams)
-		if err1 != nil {
-			err = err1
-			return
-		}
-		address := address_key.String()
-		if r.MatchString(address) {
-			privateWif = child.String()
-			addressWif = address
-			return
+
+		address_wif := address.String()
+		if strings.HasPrefix(address_wif, pattern) {
+			private_key, err1 := child.ECPrivKey()
+			if err1 != nil {
+				err = err1
+				return
+			}
+			private_wif, err1 := btcutil.NewWIF(private_key, &chaincfg.MainNetParams, true)
+			if err1 != nil {
+				err = err1
+				return
+			}
+			private := private_wif.String()
+
+			wallets = append(wallets, []string{private, address.String()})
+			if len(wallets) == int(count) {
+				return
+			}
 		}
 	}
 	err = errors.New("Vanity pattern not found.")
@@ -198,8 +220,8 @@ func InputBrainWalletSecret(tip string) (secret string, salt string, err error) 
 		return
 	}
 	println("")
-	if len(escapeHexString(salt1)) < 6 {
-		color.HiRed("  Salt at least 6 characters.")
+	if len(escapeHexString(salt1)) < 8 {
+		color.HiRed("  Salt at least 8 characters.")
 		err = errInput
 		return
 	}
