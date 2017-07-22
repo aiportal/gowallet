@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"os"
 	"regexp"
 	"strings"
@@ -19,10 +20,11 @@ import (
 	"golang.org/x/crypto/ripemd160"
 	"golang.org/x/crypto/scrypt"
 	"golang.org/x/crypto/ssh/terminal"
-	"fmt"
 )
 
 const hardened = 0x80000000
+
+const alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 
 // Generate BIP44 account extended private key and extended public key.
 func GenerateAccount(seed []byte, k uint32) (privateKey string, publicKey string, err error) {
@@ -96,6 +98,13 @@ func GenerateWallets(account string, count uint32) (wallets [][]string, err erro
 func SearchVanities(account string, vanity string, count uint32,
 	progress func(i uint32, count uint32, n uint32)) (wallets [][]string, err error) {
 
+	// check vanity
+	for _, c := range vanity {
+		if !strings.Contains(alphabet, string(c)) {
+			err = errors.New("Invalid vanity character: " + string(c))
+			return
+		}
+	}
 	pattern := "1" + vanity
 
 	account_key, err := hdkeychain.NewKeyFromString(account)
@@ -176,6 +185,7 @@ func GenerateWalletWif(seed []byte) (privateWif string, addressWif string, err e
 
 // Input secret and salt for brain wallet
 func InputBrainWalletSecret(tip string) (secret string, salt string, err error) {
+// TODO: if input error, repeat input.
 
 	errInput := errors.New("Input error")
 
@@ -183,8 +193,12 @@ func InputBrainWalletSecret(tip string) (secret string, salt string, err error) 
 	color.Yellow(tip)
 	println("")
 
-	terminal.MakeRaw(int(os.Stdin.Fd()))
+	oldState, err := terminal.MakeRaw(int(os.Stdin.Fd()))
+	if err != nil {
+		return
+	}
 	t := terminal.NewTerminal(os.Stdin, "")
+	defer terminal.Restore(int(os.Stdin.Fd()), oldState)
 
 	// Secret
 	print("Brain wallet secret:")
@@ -294,14 +308,14 @@ func GenerateBrainWalletSeed(secret string, salt string) (seed []byte, err error
 
 	secret1 := make([]byte, len(secret_bytes))
 	secret2 := make([]byte, len(secret_bytes))
-	for i, v := range secret {
+	for i, v := range secret_bytes {
 		secret1[i] = byte(v | 0x01)
 		secret2[i] = byte(v | 0x02)
 	}
 
 	salt1 := make([]byte, len(salt_bytes))
 	salt2 := make([]byte, len(salt_bytes))
-	for i, v := range salt {
+	for i, v := range salt_bytes {
 		salt1[i] = byte(v | 0x01)
 		salt2[i] = byte(v | 0x02)
 	}

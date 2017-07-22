@@ -56,8 +56,10 @@ func main() {
 			println(err.Error())
 			return
 		}
-		fmt.Printf("account extended key: %s\n", accountKey)
-		fmt.Printf("account extended pub: %s\n", accountPub)
+		fmt.Println("")
+		fmt.Println("Main account: ")
+		fmt.Printf("    key: %s\n", accountKey)
+		fmt.Printf("    pub: %s\n", accountPub)
 
 		if vanity == "" {
 			wallets, err := address.GenerateWallets(accountKey, uint32(number))
