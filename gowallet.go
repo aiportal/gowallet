@@ -18,7 +18,7 @@ Secret and salt allow the use of hexadecimal notation similar to '\xff' or '\xFF
 It is advisable to use more complex secret and to write secret on paper.
 It is also recommended that salt be memorized in the brain.`
 
-const debug = true
+const debug = false
 const trace = false
 
 
