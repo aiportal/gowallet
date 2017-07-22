@@ -183,8 +183,12 @@ func InputBrainWalletSecret(tip string) (secret string, salt string, err error) 
 	color.Yellow(tip)
 	println("")
 
-	terminal.MakeRaw(int(os.Stdin.Fd()))
+	oldState, err := terminal.MakeRaw(int(os.Stdin.Fd()))
+	if err != nil {
+		return
+	}
 	t := terminal.NewTerminal(os.Stdin, "")
+	defer terminal.Restore(int(os.Stdin.Fd()), oldState)
 
 	// Secret
 	print("Brain wallet secret:")
@@ -294,14 +298,14 @@ func GenerateBrainWalletSeed(secret string, salt string) (seed []byte, err error
 
 	secret1 := make([]byte, len(secret_bytes))
 	secret2 := make([]byte, len(secret_bytes))
-	for i, v := range secret {
+	for i, v := range secret_bytes {
 		secret1[i] = byte(v | 0x01)
 		secret2[i] = byte(v | 0x02)
 	}
 
 	salt1 := make([]byte, len(salt_bytes))
 	salt2 := make([]byte, len(salt_bytes))
-	for i, v := range salt {
+	for i, v := range salt_bytes {
 		salt1[i] = byte(v | 0x01)
 		salt2[i] = byte(v | 0x02)
 	}
