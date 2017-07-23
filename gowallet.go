@@ -18,27 +18,29 @@ Secret and salt allow the use of hexadecimal notation similar to '\xff' or '\xFF
 It is advisable to use more complex secret and to write secret on paper.
 It is also recommended that salt be memorized in the brain.`
 
-const debug = false
+const debug = true
 const trace = false
 
 
 func main() {
 	vanity, number, export := parseParams()
 
+	var passPhrase string
 	if _, err := os.Stat("./gowallet.wlt"); os.IsNotExist(err) {
 		// New wallets.
 		var seed []byte
 		if !debug {
-			secret, pwd, err := address.InputBrainWalletSecret(goWalletTip)
+			secret, salt, err := address.InputBrainWalletSecret(goWalletTip)
 			if err != nil {
 				println(err.Error())
 				return
 			}
 			if trace {
 				println("your secret is: " + secret)
-				println("your salt is: " + pwd)
+				println("your salt is: " + salt)
 			}
-			seed, err = address.GenerateBrainWalletSeed(secret, pwd)
+			passPhrase = salt
+			seed, err = address.GenerateBrainWalletSeed(secret, salt)
 			if err != nil {
 				println(err.Error())
 				return
@@ -49,6 +51,7 @@ func main() {
 				println(err.Error())
 				return
 			}
+			passPhrase = "gowallet"
 		}
 
 		accountKey, accountPub, err := address.GenerateAccount(seed[:], 0)
@@ -58,7 +61,7 @@ func main() {
 		}
 		fmt.Println("")
 		fmt.Println("Main account: ")
-		fmt.Printf("    key: %s\n", accountKey)
+		// fmt.Printf("    key: %s\n", accountKey)
 		fmt.Printf("    pub: %s\n", accountPub)
 
 		if vanity == "" {
@@ -68,8 +71,13 @@ func main() {
 				return
 			}
 			for i, w := range wallets {
+				encrypt, err := address.EncryptKey(w[0], passPhrase)
+				if err != nil {
+					println(err.Error())
+					encrypt = w[0]
+				}
 				fmt.Printf("wallet(%d): \n", i)
-				fmt.Printf("	private: %s\n", w[0])
+				fmt.Printf("	private: %s\n", encrypt)
 				fmt.Printf("	address: %s\n", w[1])
 			}
 			if export != "" {

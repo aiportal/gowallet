@@ -75,7 +75,7 @@ func GenerateWallets(account string, count uint32) (wallets [][]string, err erro
 			err = err1
 			return
 		}
-		private_wif, err1 := btcutil.NewWIF(private_key, &chaincfg.MainNetParams, true)
+		private_wif, err1 := btcutil.NewWIF(private_key, &chaincfg.MainNetParams, false)
 		if err1 != nil {
 			err = err1
 			return
@@ -96,6 +96,10 @@ func SearchVanities(account string, vanity string, count uint32,
 	progress func(i uint32, count uint32, n uint32)) (wallets [][]string, err error) {
 
 	// check vanity
+	if len(vanity) > 6 {
+		err = errors.New("Vanity maximum 6 characters.")
+		return
+	}
 	for _, c := range vanity {
 		if !strings.Contains(alphabet, string(c)) {
 			err = errors.New("Invalid vanity character: " + string(c))
@@ -137,7 +141,7 @@ func SearchVanities(account string, vanity string, count uint32,
 				err = err1
 				return
 			}
-			private_wif, err1 := btcutil.NewWIF(private_key, &chaincfg.MainNetParams, true)
+			private_wif, err1 := btcutil.NewWIF(private_key, &chaincfg.MainNetParams, false)
 			if err1 != nil {
 				err = err1
 				return
