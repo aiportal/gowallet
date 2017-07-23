@@ -1,7 +1,6 @@
 package address
 
 import (
-	"bytes"
 	"crypto/sha1"
 	"crypto/sha256"
 	"encoding/hex"
@@ -10,14 +9,12 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
-	"github.com/btcsuite/btcutil/base58"
 	"github.com/btcsuite/btcutil/hdkeychain"
 	"github.com/fatih/color"
-	"github.com/aiportal/koblitz/bitelliptic"
 	"golang.org/x/crypto/pbkdf2"
-	"golang.org/x/crypto/ripemd160"
 	"golang.org/x/crypto/scrypt"
 	"golang.org/x/crypto/ssh/terminal"
 )
@@ -118,7 +115,7 @@ func SearchVanities(account string, vanity string, count uint32,
 
 	wallets = [][]string{}
 	for i := uint32(0); i < hardened; i++ {
-		if i > 0 && i % 10000 == 0 {
+		if i > 0 && i%10000 == 0 {
 			progress(i, hardened, uint32(len(wallets)))
 		}
 
@@ -160,32 +157,9 @@ func SearchVanities(account string, vanity string, count uint32,
 	return
 }
 
-// Generate wallet private key and address
-func GenerateWalletWif(seed []byte) (privateWif string, addressWif string, err error) {
-	reader := bytes.NewReader(seed)
-	private_bytes, x, y, err := bitelliptic.S256().GenerateKey(reader)
-	if err != nil {
-		return
-	}
-	privateWif = base58.CheckEncode(private_bytes, 0x80)
-
-	var public_bytes = [65]byte{0x04}
-	copy(public_bytes[33 - len(x.Bytes()):], x.Bytes())
-	copy(public_bytes[65 - len(y.Bytes()):], y.Bytes())
-
-	public_sha := sha256.Sum256(public_bytes[:])
-
-	ripeHash := ripemd160.New()
-	ripeHash.Write(public_sha[:])
-	public_ripe := ripeHash.Sum(nil)
-
-	addressWif = base58.CheckEncode(public_ripe, 0x00)
-	return
-}
-
 // Input secret and salt for brain wallet
 func InputBrainWalletSecret(tip string) (secret string, salt string, err error) {
-// TODO: if input error, repeat input.
+	// TODO: if input error, repeat input.
 
 	errInput := errors.New("Input error")
 
@@ -269,7 +243,7 @@ func escapeHexString(str string) []byte {
 		return []byte(str)
 	}
 
-	key := r.ReplaceAllFunc([]byte(str), func(s []byte) []byte{
+	key := r.ReplaceAllFunc([]byte(str), func(s []byte) []byte {
 		v, _ := hex.DecodeString(string(s[2:]))
 		return v
 	})
@@ -326,16 +300,9 @@ func GenerateBrainWalletSeed(secret string, salt string) (seed []byte, err error
 	}
 	s2 := pbkdf2.Key(secret2, salt2, 4096, 32, sha1.New)
 
-	_, x1, y1, err := bitelliptic.S256().GenerateKey(bytes.NewReader(s1))
-	if err != nil {
-		return
-	}
-	_, x2, y2, err := bitelliptic.S256().GenerateKey(bytes.NewReader(s2))
-	if err != nil {
-		return
-	}
-
-	x, y := bitelliptic.S256().Add(x1, y1, x2, y2)
+	pk1, _ := btcec.PrivKeyFromBytes(btcec.S256(), s1)
+	pk2, _ := btcec.PrivKeyFromBytes(btcec.S256(), s2)
+	x, y := btcec.S256().Add(pk1.X, pk1.Y, pk2.X, pk2.Y)
 
 	seed = []byte{0x04}
 	seed = append(seed, x.Bytes()...)
