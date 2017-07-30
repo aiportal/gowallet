@@ -52,6 +52,25 @@ type WalletParam struct {
 	Salt string
 }
 
+func InputNewParameters(chance uint32) (wp *WalletParam, err error) {
+
+	color.HiYellow(createWalletTip)
+
+	wp = new(WalletParam)
+	for i:=uint32(0); i<chance; i++ {
+		if err = wp.inputSecret(); err == nil {
+			break
+		}
+	}
+
+	for i:=uint32(0); i<chance; i++ {
+		if err = wp.inputSalt(); err == nil {
+			break
+		}
+	}
+	return
+}
+
 func (wp *WalletParam) InputParameters(chance uint32) (err error) {
 
 	color.HiYellow(createWalletTip)
