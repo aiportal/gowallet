@@ -1,6 +1,4 @@
-// +build en_us !zh_cn
-
-package tui
+package view
 
 import (
 	ui "github.com/aiportal/termui"
@@ -85,10 +83,12 @@ func rowCreateEnter() *ui.Row {
 	return ui.NewRow(ui.NewCol(12, 0, next))
 }
 
-var SplashStartView = []*ui.Row{ rowBlank(2), rowTitle(), rowStartTip(), rowProjectUrl(), rowEnter() }
-var SplashCreateView = []*ui.Row{ rowBlank(2), rowTitle(), rowCreateTip(), rowCreateEnter() }
+type SplashView []*ui.Row
 
-func ShowSplashView(rows []*ui.Row) {
+var SplashStartView = SplashView{ rowBlank(2), rowTitle(), rowStartTip(), rowProjectUrl(), rowEnter() }
+var SplashCreateView = SplashView{ rowBlank(2), rowTitle(), rowCreateTip(), rowCreateEnter() }
+
+func ShowSplashView(rows SplashView) {
 	if err := ui.Init(); err != nil {
 		panic(err)
 	}
