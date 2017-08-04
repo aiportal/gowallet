@@ -1,4 +1,4 @@
-package address
+package wallet
 
 import (
 	"crypto/sha1"
@@ -25,12 +25,6 @@ type WalletAccount struct {
 	PublicKey  string
 }
 
-type Wallet struct {
-	SeqNum  uint32
-	Private string
-	Address string
-}
-
 func NewWalletAccount(secret, salt []byte) (wa *WalletAccount, err error) {
 
 	wa = new(WalletAccount)
@@ -39,7 +33,11 @@ func NewWalletAccount(secret, salt []byte) (wa *WalletAccount, err error) {
 	if err != nil {
 		return
 	}
-	err = wa.generateAccount(seed, 0)
+	master_key, err := hdkeychain.NewMaster(seed, &AddressNetParams)
+	if err != nil {
+		return
+	}
+	err = wa.generateAccount(master_key.String(), 0)
 	return
 }
 
@@ -95,8 +93,8 @@ func (*WalletAccount) generateSeed(secret, salt []byte) (seed []byte, err error)
 }
 
 // Generate BIP44 account extended private key and extended public key.
-func (wa *WalletAccount) generateAccount(seed []byte, k uint32) (err error) {
-	master_key, err := hdkeychain.NewMaster(seed, &AddressNetParams)
+func (wa *WalletAccount) generateAccount(masterKey string, k uint32) (err error) {
+	master_key, err := hdkeychain.NewKeyFromString(masterKey)
 	if err != nil {
 		return
 	}
@@ -124,7 +122,7 @@ func (wa *WalletAccount) generateAccount(seed []byte, k uint32) (err error) {
 }
 
 // Generate multiple address
-func (wa *WalletAccount) GenerateWallets(start, count uint32) (wallets []Wallet, err error) {
+func (wa *WalletAccount) GenerateWallets(start, count uint32, compress bool) (wallets []*Wallet, err error) {
 
 	var account, change *hdkeychain.ExtendedKey
 	account, err = hdkeychain.NewKeyFromString(wa.PrivateKey)
@@ -136,9 +134,10 @@ func (wa *WalletAccount) GenerateWallets(start, count uint32) (wallets []Wallet,
 		return
 	}
 
-	wallets = make([]Wallet, count)
-	for i := uint32(start); i < count; i++ {
-		child, err := change.Child(i)
+	wallets = make([]*Wallet, count)
+	for i := uint32(0); i < count; i++ {
+		n := start + i
+		child, err := change.Child(n)
 		if err != nil {
 			break
 		}
@@ -146,7 +145,7 @@ func (wa *WalletAccount) GenerateWallets(start, count uint32) (wallets []Wallet,
 		if err != nil {
 			break
 		}
-		private_wif, err := btcutil.NewWIF(private_key, &AddressNetParams, false)
+		private_wif, err := btcutil.NewWIF(private_key, &AddressNetParams, compress)
 		if err != nil {
 			break
 		}
@@ -157,7 +156,11 @@ func (wa *WalletAccount) GenerateWallets(start, count uint32) (wallets []Wallet,
 		private_str := private_wif.String()
 		address_str := address_key.String()
 
-		wallets[i] = Wallet{SeqNum: i, Private: private_str, Address: address_str}
+		w := new(Wallet)
+		w.No = n
+		w.Private = private_str
+		w.Address = address_str
+		wallets[i] = w
 	}
 	return
 }
@@ -184,7 +187,7 @@ func (wa *WalletAccount) NormalizeVanities(vanities []string) (patterns []string
 	return
 }
 
-type FindProgress func(progress, count, found uint32)
+type FindProgress func(progress, count, found uint32) (stop bool)
 
 // Find vanity address
 func (wa *WalletAccount) FindVanities(patterns []string, count uint32, progress FindProgress) (ws []Wallet, err error) {
@@ -202,7 +205,10 @@ func (wa *WalletAccount) FindVanities(patterns []string, count uint32, progress 
 
 		if i%100000 == 0 {
 			if progress != nil {
-				progress(i, hardened, uint32(len(ws)))
+				stop := progress(i, hardened, uint32(len(ws)))
+				if stop {
+					break
+				}
 			}
 		}
 
@@ -227,7 +233,7 @@ func (wa *WalletAccount) FindVanities(patterns []string, count uint32, progress 
 
 		if match {
 			var w *Wallet
-			w, err = wa.newWallet(child, i)
+			w, err = wa.createWallet(child, i)
 			if err != nil {
 				break
 			}
@@ -243,7 +249,7 @@ func (wa *WalletAccount) FindVanities(patterns []string, count uint32, progress 
 	return
 }
 
-func (wa *WalletAccount) newWallet(child *hdkeychain.ExtendedKey, seqNum uint32) (w *Wallet, err error) {
+func (wa *WalletAccount) createWallet(child *hdkeychain.ExtendedKey, seqNum uint32) (w *Wallet, err error) {
 
 	private_key, err := child.ECPrivKey()
 	if err != nil {
@@ -263,7 +269,7 @@ func (wa *WalletAccount) newWallet(child *hdkeychain.ExtendedKey, seqNum uint32)
 	address_str := address_key.String()
 
 	w = new(Wallet)
-	w.SeqNum = seqNum
+	w.No = seqNum
 	w.Private = private_str
 	w.Address = address_str
 	return
