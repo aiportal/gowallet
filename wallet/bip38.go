@@ -1,4 +1,4 @@
-package address
+package wallet
 
 import (
 	"crypto/sha256"
