@@ -8,7 +8,7 @@ import (
 )
 
 type Wallet struct {
-	No      int
+	No      uint32
 	Private string
 	Address string
 }
