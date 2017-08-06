@@ -156,11 +156,7 @@ func (wa *WalletAccount) GenerateWallets(start, count uint32, compress bool) (wa
 		private_str := private_wif.String()
 		address_str := address_key.String()
 
-		w := new(Wallet)
-		w.No = n
-		w.Private = private_str
-		w.Address = address_str
-		wallets[i] = w
+		wallets[i] = NewWallet(n, private_str, address_str)
 	}
 	return
 }
@@ -268,9 +264,6 @@ func (wa *WalletAccount) createWallet(child *hdkeychain.ExtendedKey, seqNum uint
 	}
 	address_str := address_key.String()
 
-	w = new(Wallet)
-	w.No = seqNum
-	w.Private = private_str
-	w.Address = address_str
+	w = NewWallet(seqNum, private_str, address_str)
 	return
 }

@@ -22,12 +22,15 @@ func TestWallet(t *testing.T) {
 
 	for _, v := range ts_data {
 		w := Wallet{Address: v.Address}
-		b, err := w.Balance()
+		err := w.LoadBalance()
 		if err != nil {
 			t.Fatal(err)
 		}
-		if b != v.Balance {
-			t.Fatal(fmt.Sprintf("Balance: %d != %d", b, v.Balance))
+		if w.Balance == nil {
+			t.Fatal("load balance error")
+		}
+		if w.Balance.Value() != v.Balance {
+			t.Fatal(fmt.Sprintf("Balance: %d != %d", w.Balance.Value(), v.Balance))
 		}
 	}
 }
