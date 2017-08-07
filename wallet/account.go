@@ -186,7 +186,7 @@ func (wa *WalletAccount) NormalizeVanities(vanities []string) (patterns []string
 type FindProgress func(progress, count, found uint32) (stop bool)
 
 // Find vanity address
-func (wa *WalletAccount) FindVanities(patterns []string, count uint32, progress FindProgress) (ws []Wallet, err error) {
+func (wa *WalletAccount) FindVanities(patterns []string, compress bool, progress FindProgress) (ws []*Wallet, err error) {
 
 	account, err := hdkeychain.NewKeyFromString(wa.PrivateKey)
 	if err != nil {
@@ -229,14 +229,11 @@ func (wa *WalletAccount) FindVanities(patterns []string, count uint32, progress 
 
 		if match {
 			var w *Wallet
-			w, err = wa.createWallet(child, i)
+			w, err = wa.createWallet(child, i, compress)
 			if err != nil {
 				break
 			}
-			ws = append(ws, *w)
-			if len(ws) == int(count) {
-				break
-			}
+			ws = append(ws, w)
 		}
 	}
 	if len(ws) == 0 {
@@ -245,13 +242,13 @@ func (wa *WalletAccount) FindVanities(patterns []string, count uint32, progress 
 	return
 }
 
-func (wa *WalletAccount) createWallet(child *hdkeychain.ExtendedKey, seqNum uint32) (w *Wallet, err error) {
+func (wa *WalletAccount) createWallet(child *hdkeychain.ExtendedKey, seqNum uint32, compress bool) (w *Wallet, err error) {
 
 	private_key, err := child.ECPrivKey()
 	if err != nil {
 		return
 	}
-	private_wif, err := btcutil.NewWIF(private_key, &AddressNetParams, false)
+	private_wif, err := btcutil.NewWIF(private_key, &AddressNetParams, compress)
 	if err != nil {
 		err = err
 		return
