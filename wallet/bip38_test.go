@@ -37,7 +37,7 @@ func TestEncryptKey(t *testing.T) {
 	}
 
 	for _, v := range testEncrypt {
-		encrypt, err := EncryptKey(v.wif, v.pass)
+		encrypt, err := EncryptKey(v.wif, []byte(v.pass))
 		if err != nil {
 			t.Fatal(err)
 		}

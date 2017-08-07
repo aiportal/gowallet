@@ -10,7 +10,7 @@ import (
 )
 
 // BIP38 encrypt implement
-func EncryptKey(privateWif string, passPhrase string) (encryptWif string, err error) {
+func EncryptKey(privateWif string, passKey []byte) (encryptWif string, err error) {
 	// TODO: test compressed private WIF
 
 	wif, err := btcutil.DecodeWIF(privateWif)
@@ -23,7 +23,7 @@ func EncryptKey(privateWif string, passPhrase string) (encryptWif string, err er
 		return
 	}
 	sum := checkSum([]byte(pub.EncodeAddress()))
-	key, err := scrypt.Key([]byte(passPhrase), sum, 16384, 8, 8, 64)
+	key, err := scrypt.Key(passKey, sum, 16384, 8, 8, 64)
 	if err != nil {
 		return
 	}
