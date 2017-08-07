@@ -122,7 +122,7 @@ func (wa *WalletAccount) generateAccount(masterKey string, k uint32) (err error)
 }
 
 // Generate multiple address
-func (wa *WalletAccount) GenerateWallets(start, count uint32, compress bool) (wallets []*Wallet, err error) {
+func (wa *WalletAccount) GenerateWallets(start, count uint32) (wallets []*Wallet, err error) {
 
 	var account, change *hdkeychain.ExtendedKey
 	account, err = hdkeychain.NewKeyFromString(wa.PrivateKey)
@@ -145,7 +145,7 @@ func (wa *WalletAccount) GenerateWallets(start, count uint32, compress bool) (wa
 		if err != nil {
 			break
 		}
-		private_wif, err := btcutil.NewWIF(private_key, &AddressNetParams, compress)
+		private_wif, err := btcutil.NewWIF(private_key, &AddressNetParams, true)
 		if err != nil {
 			break
 		}
@@ -153,9 +153,9 @@ func (wa *WalletAccount) GenerateWallets(start, count uint32, compress bool) (wa
 		if err != nil {
 			break
 		}
+
 		private_str := private_wif.String()
 		address_str := address_key.String()
-
 		wallets[i] = NewWallet(n, private_str, address_str)
 	}
 	return
@@ -186,7 +186,7 @@ func (wa *WalletAccount) NormalizeVanities(vanities []string) (patterns []string
 type FindProgress func(progress, count, found uint32) (stop bool)
 
 // Find vanity address
-func (wa *WalletAccount) FindVanities(patterns []string, compress bool, progress FindProgress) (ws []*Wallet, err error) {
+func (wa *WalletAccount) FindVanities(patterns []string, progress FindProgress) (ws []*Wallet, err error) {
 
 	account, err := hdkeychain.NewKeyFromString(wa.PrivateKey)
 	if err != nil {
@@ -229,7 +229,7 @@ func (wa *WalletAccount) FindVanities(patterns []string, compress bool, progress
 
 		if match {
 			var w *Wallet
-			w, err = wa.createWallet(child, i, compress)
+			w, err = wa.createWallet(child, i)
 			if err != nil {
 				break
 			}
@@ -242,13 +242,13 @@ func (wa *WalletAccount) FindVanities(patterns []string, compress bool, progress
 	return
 }
 
-func (wa *WalletAccount) createWallet(child *hdkeychain.ExtendedKey, seqNum uint32, compress bool) (w *Wallet, err error) {
+func (wa *WalletAccount) createWallet(child *hdkeychain.ExtendedKey, seqNum uint32) (w *Wallet, err error) {
 
 	private_key, err := child.ECPrivKey()
 	if err != nil {
 		return
 	}
-	private_wif, err := btcutil.NewWIF(private_key, &AddressNetParams, compress)
+	private_wif, err := btcutil.NewWIF(private_key, &AddressNetParams, true)
 	if err != nil {
 		err = err
 		return
