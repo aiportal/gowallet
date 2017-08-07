@@ -15,7 +15,15 @@ func TestWallet(t *testing.T) {
 			Balance: 69259423,
 		},
 		{
+			Address: "1Bv8dN7pemC5N3urfMDdAFReibefrBqCaK",
+			Balance: 4524469,
+		},
+		{
 			Address: "1KtWutb75LqXrAd4BkcW2hqG7SWab2xJeB",
+			Balance: 0,
+		},
+		{
+			Address: "1Brn37oiWcDoTVqeP1EzbVtCz3dJ7W1Z57",
 			Balance: 0,
 		},
 	}
