@@ -1,9 +1,10 @@
 package view
 
 import (
-	ui "github.com/aiportal/termui"
-	"strings"
 	"fmt"
+	"strings"
+
+	ui "github.com/aiportal/termui"
 )
 
 func NewTipView(name string) (view *GridView) {
@@ -40,7 +41,7 @@ func createTransTipView(address string) (view *GridView) {
 
 	rowTip := ui.NewRow(ui.NewCol(12, 0, tip))
 	view = new(GridView)
-	view.rows = []*ui.Row{ rowBlank(2), rowTitle(), rowTip, rowProjectUrl(), rowEnter() }
+	view.rows = []*ui.Row{rowBlank(2), rowTitle(), rowTip, rowProjectUrl(), rowEnter()}
 	return
 }
 
@@ -59,7 +60,7 @@ func createVanityTipView() (view *GridView) {
 
 	rowTip := ui.NewRow(ui.NewCol(12, 0, tip))
 	view = new(GridView)
-	view.rows = []*ui.Row{ rowBlank(2), rowTitle(), rowTip, rowProjectUrl(), rowEnter() }
+	view.rows = []*ui.Row{rowBlank(2), rowTitle(), rowTip, rowProjectUrl(), rowEnter()}
 	return
 }
 
@@ -78,7 +79,7 @@ func createPasswordTipView() (view *GridView) {
 
 	rowTip := ui.NewRow(ui.NewCol(12, 0, tip))
 	view = new(GridView)
-	view.rows = []*ui.Row{ rowBlank(2), rowTitle(), rowTip, rowProjectUrl(), rowEnter() }
+	view.rows = []*ui.Row{rowBlank(2), rowTitle(), rowTip, rowProjectUrl(), rowEnter()}
 	return
 }
 
@@ -97,7 +98,7 @@ func createSpendTipView() (view *GridView) {
 
 	rowTip := ui.NewRow(ui.NewCol(12, 0, tip))
 	view = new(GridView)
-	view.rows = []*ui.Row{ rowBlank(2), rowTitle(), rowTip, rowProjectUrl(), rowEnter() }
+	view.rows = []*ui.Row{rowBlank(2), rowTitle(), rowTip, rowProjectUrl(), rowEnter()}
 	return
 }
 
@@ -116,6 +117,6 @@ func createExportTipView() (view *GridView) {
 
 	rowTip := ui.NewRow(ui.NewCol(12, 0, tip))
 	view = new(GridView)
-	view.rows = []*ui.Row{ rowBlank(2), rowTitle(), rowTip, rowProjectUrl(), rowEnter() }
+	view.rows = []*ui.Row{rowBlank(2), rowTitle(), rowTip, rowProjectUrl(), rowEnter()}
 	return
 }

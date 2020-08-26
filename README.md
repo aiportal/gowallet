@@ -21,6 +21,15 @@ Donations are welcome at <code>[<b>1BTC</b>zvzTn7QYBwFkRRkXGcVPodwrYoQyAq](https
 
 ![GoWallet Encryption Process](https://raw.githubusercontent.com/aiportal/gowallet/master/_doc/encryption.png)
 
+#### Installation 
+
+requires installation of golang version 1.10 or later
+
+```
+go get github.com/aiportal/gowallet
+dep ensure
+go install
+```
 
 #### Advanced usage
 

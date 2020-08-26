@@ -9,6 +9,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"

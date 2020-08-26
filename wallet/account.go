@@ -26,13 +26,16 @@ type WalletAccount struct {
 }
 
 func NewWalletAccount(secret, salt []byte) (wa *WalletAccount, err error) {
+	seed, err := generateSeed(secret, salt)
+	if err != nil {
+		return wa, err
+	}
+	return NewWalletAccountFromSeed(seed)
+}
+
+func NewWalletAccountFromSeed(seed []byte) (wa *WalletAccount, err error) {
 
 	wa = new(WalletAccount)
-	var seed []byte
-	seed, err = wa.generateSeed(secret, salt)
-	if err != nil {
-		return
-	}
 	master_key, err := hdkeychain.NewMaster(seed, &AddressNetParams)
 	if err != nil {
 		return
@@ -42,7 +45,7 @@ func NewWalletAccount(secret, salt []byte) (wa *WalletAccount, err error) {
 }
 
 // Generate wallet seed from secret and salt
-func (*WalletAccount) generateSeed(secret, salt []byte) (seed []byte, err error) {
+func generateSeed(secret, salt []byte) (seed []byte, err error) {
 	// WarpWallet encryption:
 	// 1. s1 ← scrypt(key=passphrase||0x1, salt=salt||0x1, N=218, r=8, p=1, dkLen=32)
 	// 2. s2 ← PBKDF2(key=passphrase||0x2, salt=salt||0x2, c=216, dkLen=32)

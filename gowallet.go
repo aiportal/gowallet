@@ -4,8 +4,9 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"gowallet/view"
-	"gowallet/wallet"
+
+	"github.com/aiportal/gowallet/view"
+	"github.com/aiportal/gowallet/wallet"
 )
 
 func main() {

@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	"github.com/aiportal/gowallet/wallet"
 	ui "github.com/aiportal/termui"
-	"gowallet/wallet"
 )
 
 type AccountView struct {
